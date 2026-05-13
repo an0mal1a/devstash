@@ -15,7 +15,8 @@ COMMANDS:
     search <query>         Search snippets by title or content
     tag <tag1 tag2 ...>    Search snippets by tags
     export <path>          Export the json snippets file
-    import <path>          Import the json snippets file (experimental)
+    import <path>          Import the json snippets file 
+    restore <path>         Restore the specified snippets file 
     help                   Show this help panel
 
 SNIPPET TYPES:
@@ -34,6 +35,7 @@ EXAMPLES:
     devstash tag vscode 3d
     devstash export C:\Users\username\backups\exported_snippets.json
     devstash import C:\Users\username\backups\exported_snippets_02.json
+    devstash restore C:\Users\username\backups\exported_snippets_02.json
 
 TAGS:
     When adding a snippet, write tags separated by commas:

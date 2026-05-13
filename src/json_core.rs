@@ -4,7 +4,7 @@ use std::path::Path;
 use crate::Snippet;
 
 // Compatibility of files
-pub fn compatibilty_check(import_path: String) -> Result<(), String>{
+pub fn compatibility_check(import_path: String) -> Result<(), String>{
     // file is json
     let content = fs::read_to_string(import_path).unwrap();
     
@@ -20,16 +20,14 @@ pub fn compatibilty_check(import_path: String) -> Result<(), String>{
 }
 
 pub fn parse(path: String) -> Result<Vec<Snippet>, Box<dyn std::error::Error>> {
-    if Path::new(&path).exists() {
-        let content = fs::read_to_string(path)?;
-        let snippets: Vec<Snippet> = match serde_json::from_str(&content) {
-            Ok(v) => v,
-            Err(_) => Vec::new(),
-        };
-        Ok(snippets)
-    } else {
-        Ok(Vec::new())
+    if !Path::new(&path).exists() {
+        return Ok(Vec::new());
     }
+
+    let content = fs::read_to_string(path)?;
+    let snippets: Vec<Snippet> = serde_json::from_str(&content)?;
+
+    Ok(snippets)
 }
 
 pub fn save(path: &str, snippets: &Vec<Snippet>) -> Result<(), Box<dyn std::error::Error>> {

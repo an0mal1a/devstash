@@ -239,8 +239,26 @@ fn import_snippets(args: &[String]) -> Result<(), String> {
         return Err("Import file does not exist".to_string());
     }
 
+    unimplemented!()
+
+    // match copy(import_path, PATH) {
+    //     Ok(_) => {
+    //         utils::print_success("File imported successfully");
+    //         Ok(())
+    //     }
+    //     Err(e) => Err(format!("Failed to import file: {}", e)),
+    // }
+}
+
+fn restore_snippets(args: &[String]) -> Result<(), String> {
+    let import_path = args.get(2).ok_or("No import specified")?;
+
+    if !Path::new(import_path).exists() {
+        return Err("Import file does not exist".to_string());
+    }
+
     // Check if the file is compatible.
-    json_core::compatibilty_check(import_path.to_string())?;
+    json_core::compatibility_check(import_path.to_string())?;
 
     match copy(import_path, PATH) {
         Ok(_) => {
@@ -251,12 +269,10 @@ fn import_snippets(args: &[String]) -> Result<(), String> {
     }
 }
 
+
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        help_panel::main();
-        return;
-    }
+    if args.len() < 2 { return help_panel::main(); }
 
     let mut snippets: Vec<Snippet> = match json_core::parse(PATH.to_string()) {
         Ok(sn) => sn,
@@ -265,36 +281,49 @@ fn main() {
             return;
         }
     };
+    let mut should_save = false;
 
     let action: &String = &args[1];
-    if action == "add" { add_snippet(&args, &mut snippets);} 
-    else if action == "help" { help_panel::main(); return; } 
-    else if action == "list" { list_snippets(&args, &snippets) } 
-    else if action == "show" { show_snippet(&args, &snippets); } 
-    else if action == "delete" { delete_snippet(&args, &mut snippets);} 
-    else if action == "search" {
-        if let Err(e) = search_snippets(&args, &snippets) {
-            utils::print_error(&e);
+    match action.as_str() {
+        "add" => { add_snippet(&args, &mut snippets); } 
+        "help" => { return help_panel::main(); } 
+        "list" => { list_snippets(&args, &snippets); } 
+        "show" => { show_snippet(&args, &snippets); } 
+        "delete" => { delete_snippet(&args, &mut snippets); should_save = true; } 
+        "export" => { let _ = export_snippets(args); }
+        "search" => { 
+            if let Err(e) = search_snippets(&args, &snippets) {
+                utils::print_error(&e);
+            } 
+        },
+        "tag" => { 
+            if let Err(e) = search_by_tag(&args, &snippets) {
+                utils::print_error(&e);
+            } 
         }
-    } else if action == "tag" {
-        if let Err(e) = search_by_tag(&args, &snippets) {
-            utils::print_error(&e);
+        "restore" => {
+            if let Err(e) = restore_snippets(&args) {
+                utils::print_error(&e);
+            }
+            should_save = true;
         }
-    } else if action == "export" { let _ = export_snippets(&args); } 
-    else if action == "import" {
-        if let Err(e) = import_snippets(&args) {
-            utils::print_error(&e);
+        "import" => {
+            if let Err(e) = import_snippets(&args) {
+                utils::print_error(&e);
+            }
+            should_save = true;
         }
-        return;
-    } // Return early because import already replaces the JSON file directly. Continuing execution would overwrite the imported file with the old in-memory snippets.
+    }
 
-    match json_core::save(PATH, &snippets) {
-        Ok(sn) => sn,
-        Err(e) => {
-            utils::print_error(&format!("{}", e));
-            return;
-        }
-    };
+    if should_save {
+        match json_core::save(PATH, &snippets) {
+            Ok(sn) => sn,
+            Err(e) => {
+                utils::print_error(&format!("{}", e));
+                return;
+            }
+        };
+    }
 
     return;
 }
