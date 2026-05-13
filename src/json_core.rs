@@ -1,7 +1,9 @@
-use std::fs;
 use std::path::Path;
+use std::fs;
+use std::thread::current;
 
 use crate::Snippet;
+use crate::utils::get_last_id;
 
 // Compatibility of files
 pub fn compatibility_check(import_path: String) -> Result<(), String>{
@@ -17,6 +19,29 @@ pub fn compatibility_check(import_path: String) -> Result<(), String>{
             return  Err(format!("Invalid structure: {}", e));
         }
     }
+}
+
+pub fn merge_jsons(snippets_to_import: Vec<Snippet>, current_snippets: &mut Vec<Snippet>) {
+    let mut next_id = get_last_id(&current_snippets) + 1;
+    let mut imported = 0;
+
+    for mut snippet in snippets_to_import {
+        snippet.id = next_id;
+        next_id += 1;
+
+        let already_exists = current_snippets.iter().any(|s| {
+            s.title == snippet.title 
+                && 
+            s.content == snippet.content
+        });
+
+        if already_exists { continue; }
+
+        imported += 1;
+        current_snippets.push(snippet);
+    }
+
+    println!("DevStash imported: {}", imported)
 }
 
 pub fn parse(path: String) -> Result<Vec<Snippet>, Box<dyn std::error::Error>> {

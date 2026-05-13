@@ -5,8 +5,8 @@ pub mod utils;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::fs::{copy, create_dir_all};
-use std::io::{self, Write};
+use std::fs::{self, copy, create_dir_all};
+use std::io::{self, Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, path::Path};
 
@@ -232,22 +232,20 @@ fn export_snippets(args: &[String]) -> Result<(), &str> {
     }
 }
 
-fn import_snippets(args: &[String]) -> Result<(), String> {
-    let import_path = args.get(2).ok_or("No import specified")?;
+fn import_snippets(args: &[String], snippets: &mut Vec<Snippet>) -> Result<(), String> {
+    let import_path = args.get(2).ok_or("No import specified".to_string())?;
 
     if !Path::new(import_path).exists() {
         return Err("Import file does not exist".to_string());
     }
 
-    unimplemented!()
+    // Check if the file is compatible
+    json_core::compatibility_check(import_path.to_string())?;
 
-    // match copy(import_path, PATH) {
-    //     Ok(_) => {
-    //         utils::print_success("File imported successfully");
-    //         Ok(())
-    //     }
-    //     Err(e) => Err(format!("Failed to import file: {}", e)),
-    // }
+    let content = fs::read_to_string(import_path).unwrap();
+    let snippets_to_import: Vec<Snippet> = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+    
+    Ok(json_core::merge_jsons(snippets_to_import, snippets))
 }
 
 fn restore_snippets(args: &[String]) -> Result<(), String> {
@@ -286,11 +284,13 @@ fn main() {
     let action: &String = &args[1];
     match action.as_str() {
         "add" => { add_snippet(&args, &mut snippets); } 
+        "edit" => { unimplemented!(); should_save = true; } 
         "help" => { return help_panel::main(); } 
         "list" => { list_snippets(&args, &snippets); } 
         "show" => { show_snippet(&args, &snippets); } 
         "delete" => { delete_snippet(&args, &mut snippets); should_save = true; } 
-        "export" => { let _ = export_snippets(args); }
+        "copy" => { unimplemented!();  } 
+        "export" => { let _ = export_snippets(&args); }
         "search" => { 
             if let Err(e) = search_snippets(&args, &snippets) {
                 utils::print_error(&e);
@@ -308,10 +308,14 @@ fn main() {
             should_save = true;
         }
         "import" => {
-            if let Err(e) = import_snippets(&args) {
+            if let Err(e) = import_snippets(&args, &mut snippets) {
                 utils::print_error(&e);
             }
             should_save = true;
+        }
+        _ => {
+            utils::print_error("Unknown command");
+            help_panel::main();
         }
     }
 
