@@ -1,5 +1,5 @@
-use std::path::Path;
 use std::fs;
+use std::path::Path;
 
 use crate::Snippet;
 
@@ -11,8 +11,9 @@ pub fn parse(path: String) -> Result<Vec<Snippet>, Box<dyn std::error::Error>> {
             Err(_) => Vec::new(),
         };
         Ok(snippets)
-
-    } else { Ok(Vec::new()) }
+    } else {
+        Ok(Vec::new())
+    }
 }
 
 pub fn save(path: &str, snippets: &Vec<Snippet>) -> Result<(), Box<dyn std::error::Error>> {

@@ -3,15 +3,21 @@ pub mod help_panel;
 pub mod json_core;
 pub mod utils;
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs::{copy, create_dir_all};
+use std::io::{self, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
-use std::io::{self, Write}; 
-use std::{env, fs, path::Path};
-
+use std::{env, path::Path};
 
 const PATH: &str = "snippets.json";
+pub const RESET: &str = "\x1b[0m";
+pub const DIM: &str = "\x1b[2m";
+pub const BOLD: &str = "\x1b[1m";
+pub const GREEN: &str = "\x1b[32m";
+pub const YELLOW: &str = "\x1b[33m";
+pub const RED: &str = "\x1b[31m";
+pub const CYAN: &str = "\x1b[36m";
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Snippet {
@@ -28,13 +34,13 @@ pub struct SnippetQuestion {
     title: String,
     qtype: String,
     buf: Buffer,
-    answered: bool
+    answered: bool,
 }
 
 #[derive(Clone, Debug)]
 pub enum Buffer {
     Text(String),
-    Kind(SnippetKind)
+    Kind(SnippetKind),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -46,78 +52,80 @@ pub enum SnippetKind {
 }
 
 fn add_snippet(args: &Vec<String>, snippets: &mut Vec<Snippet>) {
-    let to_add = match args.get(2) { 
+    let to_add = match args.get(2) {
         Some(v) => v.parse().unwrap_or(1),
-        None => 1
-        
+        None => 1,
     };
 
     for _ in 0..to_add {
         let mut questions: Vec<SnippetQuestion> = vec![
-            SnippetQuestion{
-                title: "Título del snippet -> ".to_string(),
+            SnippetQuestion {
+                title: format!("{}Title{}   > ", BOLD, RESET),
                 qtype: "input".to_string(),
                 buf: Buffer::Text("".to_string()),
-                answered: false
+                answered: false,
             },
-            SnippetQuestion{
-                title: "Contenido del snippet -> ".to_string(),
+            SnippetQuestion {
+                title: format!("{}Content{} > ", BOLD, RESET),
                 qtype: "input".to_string(),
                 buf: Buffer::Text("".to_string()),
-                answered: false
+                answered: false,
             },
-            SnippetQuestion{
-                title: "Tags de snippet -> ".to_string(),
+            SnippetQuestion {
+                title: format!("{}Tags{}    > ", BOLD, RESET),
                 qtype: "input".to_string(),
                 buf: Buffer::Text("".to_string()),
-                answered: false
+                answered: false,
             },
-            SnippetQuestion{
-                title: "Tipo del snippet -> ".to_string(),
+            SnippetQuestion {
+                title: format!("{}Type{}    > ", BOLD, RESET),
                 qtype: "enum".to_string(),
                 buf: Buffer::Kind(SnippetKind::Note),
-                answered: false
+                answered: false,
             },
         ];
 
-        while !utils::are_all_answered(&questions){
-
+        while !utils::are_all_answered(&questions) {
             for q in questions.iter_mut().filter(|q| !q.answered) {
                 print!("{}", q.title);
                 io::stdout().flush().unwrap();
-                
+
                 let mut answ = String::new();
                 io::stdin().read_line(&mut answ).unwrap();
                 let answ = answ.trim();
 
                 if q.qtype == "input" {
                     q.buf = Buffer::Text(answ.to_string());
-                } else {                
+                } else {
                     q.buf = match answ {
                         "command" => Buffer::Kind(SnippetKind::Command),
                         "json" => Buffer::Kind(SnippetKind::Json),
-                        _ => Buffer::Kind(SnippetKind::Note)
+                        _ => Buffer::Kind(SnippetKind::Note),
                     };
                 }
                 q.answered = true;
             }
-        };
+        }
 
         let last_id = utils::get_last_id(&snippets);
-        snippets.push(
-            Snippet {
-                id: last_id + 1,
-                title: utils::extract_text(&questions[0].buf),
-                content: utils::extract_text(&questions[1].buf),
-                tags: utils::extract_text(&questions[2].buf).split(',').map(|tag| tag.trim().to_string()).filter(|tag| !tag.is_empty()).collect(),
-                kind: utils::extract_kind(&questions[3].buf),
-                created_at: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64
-            }
-        );
+        snippets.push(Snippet {
+            id: last_id + 1,
+            title: utils::extract_text(&questions[0].buf),
+            content: utils::extract_text(&questions[1].buf),
+            tags: utils::extract_text(&questions[2].buf)
+                .split(',')
+                .map(|tag| tag.trim().to_string())
+                .filter(|tag| !tag.is_empty())
+                .collect(),
+            kind: utils::extract_kind(&questions[3].buf),
+            created_at: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64,
+        });
+        print_success(&format!("Snippet #{} saved", last_id + 1));
     }
-        
 }
-
 
 fn list_snippets(args: &[String], snippets: &[Snippet]) {
     let limit: usize = match args.get(2) {
@@ -127,32 +135,33 @@ fn list_snippets(args: &[String], snippets: &[Snippet]) {
 
     let limit = limit.min(snippets.len());
     let slice = &snippets[0..limit];
-    println!("{:#?}", slice);
+    let rows: Vec<&Snippet> = slice.iter().collect();
+    print_snippet_table("DevStash", &rows);
 }
 
-
-fn show_snippet(args: &Vec<String>, snippets: &[Snippet]){
+fn show_snippet(args: &Vec<String>, snippets: &[Snippet]) {
     let id: u64 = match args.get(2) {
         Some(v) => v.parse().unwrap_or(1),
         None => 1,
     };
 
     match utils::get_snippet_by_id(id, snippets) {
-        Ok(snippet) => println!("{:#?}", snippet),
-        Err(e) => println!("{}", e),
+        Ok(snippet) => print_snippet_detail(snippet),
+        Err(e) => print_error(&e),
     }
-
 }
 
-fn delete_snippet(args: &Vec<String>, snippets: &mut Vec<Snippet>)  {
+fn delete_snippet(args: &Vec<String>, snippets: &mut Vec<Snippet>) {
     let id: u64 = match args.get(2) {
         Some(v) => v.parse().unwrap(),
-        None => { return; }
+        None => {
+            return;
+        }
     };
 
     match utils::delete_snippet_by_id(id, snippets) {
-        Ok(_) => println!("The ID {} has been removed", id),
-        Err(e) => println!("{}", e)
+        Ok(_) => print_success(&format!("Snippet #{} removed", id)),
+        Err(e) => print_error(&e),
     }
 }
 
@@ -163,98 +172,126 @@ fn search_snippets(args: &Vec<String>, snippets: &[Snippet]) -> Result<(), Strin
         .ok_or("No tags specified")?;
 
     let search_query = slice.join(" ").to_ascii_lowercase();
-    let r: Vec<&Snippet> = snippets.iter().filter(|s| s.content.to_ascii_lowercase().contains(&search_query) || s.title.to_ascii_lowercase().contains(&search_query)).collect();
+    let r: Vec<&Snippet> = snippets
+        .iter()
+        .filter(|s| {
+            s.content.to_ascii_lowercase().contains(&search_query)
+                || s.title.to_ascii_lowercase().contains(&search_query)
+        })
+        .collect();
 
-    println!("{:#?}", r );
+    print_snippet_table(&format!("Search: {}", search_query), &r);
     Ok(())
 }
 
-
-fn search_by_tag(args: &Vec<String>, snippets: &[Snippet]) -> Result<(), String>{
+fn search_by_tag(args: &Vec<String>, snippets: &[Snippet]) -> Result<(), String> {
     // Extract the search_query
     let tags_to_find = args
         .get(2..)
         .filter(|t| !t.is_empty())
         .ok_or("No tags specified")?;
-    
+
     let tag_set: HashSet<_> = tags_to_find.iter().collect();
 
     // Compare 2 slices
     let matches: Vec<&Snippet> = snippets
         .iter()
-        .filter(|snippet| {
-            snippet.tags.iter().any(|tag| tag_set.contains(tag))
-        }).collect();
+        .filter(|snippet| snippet.tags.iter().any(|tag| tag_set.contains(tag)))
+        .collect();
 
-    println!("{:#?}", matches);
+    print_snippet_table(&format!("Tags: {}", tags_to_find.join(", ")), &matches);
     Ok(())
 }
 
-
-fn export_snippets(args: &[String]) -> Result<(), &str>{
+fn export_snippets(args: &[String]) -> Result<(), &str> {
     // Get file path
     let export_path = args.get(2).ok_or("No export path specified")?;
 
     // Check if file path exists
     let export_path = Path::new(&export_path);
     if let Some(parent) = export_path.parent() {
-        if !parent.exists(){
-            println!("[*>] Creating parent path: {}", parent.display());
+        if !parent.exists() {
+            print_warning(&format!("Creating parent path: {}", parent.display()));
 
             match create_dir_all(parent) {
-                Ok(_) => println!("\t[*>] Parent path has been created"),
-                Err(e) => println!("\t[!>] Parent path hasn't been created: {}", e),
+                Ok(_) => print_success("Parent path created"),
+                Err(e) => print_error(&format!("Parent path was not created: {}", e)),
             }
-        }   
+        }
     }
 
     match copy(PATH, export_path) {
-        Ok(_) => { println!("[*>] File backed up successfully"); Ok(())},
-        Err(e) => { println!("[!>] File hasn't been backed up: {}", e); Err("File error")},
+        Ok(_) => {
+            print_success("File exported successfully");
+            Ok(())
+        }
+        Err(e) => {
+            print_error(&format!("File was not exported: {}", e));
+            Err("File error")
+        }
     }
 }
 
-
-fn import_snippets(args: &[String]) -> Result<(), String>{
+fn import_snippets(args: &[String]) -> Result<(), String> {
     let import_path = args.get(2).ok_or("No import specified")?;
 
     if !Path::new(import_path).exists() {
-        return Err("Import file does not exist".to_string())
+        return Err("Import file does not exist".to_string());
     }
 
     match copy(import_path, PATH) {
-        Ok(_) => { 
-            println!("[*>] File imported successfully"); 
+        Ok(_) => {
+            print_success("File imported successfully");
             Ok(())
-        },
-        Err(e) => Err(format!("Failed to import file: {}", e))
+        }
+        Err(e) => Err(format!("Failed to import file: {}", e)),
     }
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 { help_panel::main(); return }
+    if args.len() < 2 {
+        help_panel::main();
+        return;
+    }
 
     let mut snippets: Vec<Snippet> = match json_core::parse(PATH.to_string()) {
         Ok(sn) => sn,
-        Err(e) => { println!("Error: {}", e); return; }
-    }; 
-   
+        Err(e) => {
+            print_error(&format!("{}", e));
+            return;
+        }
+    };
+
     let action: &String = &args[1];
-    if action == "add" { add_snippet(&args, &mut snippets); }
-    else if action == "list" { list_snippets(&args, &snippets) }
-    else if action == "show" { show_snippet(&args, &snippets); }
-    else if action == "delete" { delete_snippet(&args, &mut snippets); }
-    else if action == "search" { search_snippets(&args, &snippets);  }
-    else if action == "tag" { search_by_tag(&args, &snippets); }
-    else if action == "export" { export_snippets(&args); }
-    else if action == "import" { return import_snippets(&args).unwrap(); }  // Return early because import already replaces the JSON file directly. Continuing execution would overwrite the imported file with the old in-memory snippets.
+    if action == "add" { add_snippet(&args, &mut snippets);} 
+    else if action == "help" { help_panel::main(); return; } 
+    else if action == "list" { list_snippets(&args, &snippets) } 
+    else if action == "show" { show_snippet(&args, &snippets); } 
+    else if action == "delete" { delete_snippet(&args, &mut snippets);} 
+    else if action == "search" {
+        if let Err(e) = search_snippets(&args, &snippets) {
+            print_error(&e);
+        }
+    } else if action == "tag" {
+        if let Err(e) = search_by_tag(&args, &snippets) {
+            print_error(&e);
+        }
+    } else if action == "export" { let _ = export_snippets(&args); } 
+    else if action == "import" {
+        if let Err(e) = import_snippets(&args) {
+            print_error(&e);
+        }
+        return;
+    } // Return early because import already replaces the JSON file directly. Continuing execution would overwrite the imported file with the old in-memory snippets.
 
-    let saved = match json_core::save(PATH, &snippets) {
+    match json_core::save(PATH, &snippets) {
         Ok(sn) => sn,
-        Err(e) => { println!("Error: {}", e); return; }
-    }; 
+        Err(e) => {
+            print_error(&format!("{}", e));
+            return;
+        }
+    };
 
-    return
+    return;
 }
-

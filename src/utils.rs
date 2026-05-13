@@ -1,15 +1,23 @@
-use crate::SnippetQuestion;
-use crate::SnippetKind;
-use crate::Snippet;
 use crate::Buffer;
+use crate::Snippet;
+use crate::SnippetKind;
+use crate::SnippetQuestion;
+
+use crate::RESET;
+use crate::DIM;
+use crate::BOLD;
+use crate::GREEN;
+use crate::YELLOW;
+use crate::RED;
+use crate::CYAN;
 
 pub fn are_all_answered(arr: &Vec<SnippetQuestion>) -> bool {
     for q in arr {
         if !q.answered {
-            return false
-        } 
+            return false;
+        }
     }
-    return true
+    return true;
 }
 
 pub fn extract_text(buf: &Buffer) -> String {
@@ -27,11 +35,7 @@ pub fn extract_kind(buf: &Buffer) -> SnippetKind {
 }
 
 pub fn get_last_id(snippets: &[Snippet]) -> u64 {
-    snippets
-        .iter()
-        .map(|s| s.id)
-        .max()
-        .unwrap_or(0)
+    snippets.iter().map(|s| s.id).max().unwrap_or(0)
 }
 
 pub fn get_snippet_by_id(id: u64, snippets: &[Snippet]) -> Result<&Snippet, String> {
@@ -50,5 +54,99 @@ pub fn delete_snippet_by_id(id: u64, snippets: &mut Vec<Snippet>) -> Result<(), 
 
     snippets.remove(index);
     Ok(())
+}
 
+
+// Printing utils
+
+fn kind_label(kind: &SnippetKind) -> &'static str {
+    match kind {
+        SnippetKind::Command => "command",
+        SnippetKind::Json => "json",
+        SnippetKind::Note => "note",
+    }
+}
+
+fn truncate(value: &str, max_len: usize) -> String {
+    let chars: Vec<char> = value.chars().collect();
+    if chars.len() <= max_len {
+        return value.to_string();
+    }
+
+    let mut shortened: String = chars.into_iter().take(max_len.saturating_sub(1)).collect();
+    shortened.push('…');
+    shortened
+}
+
+fn tags_label(tags: &[String]) -> String {
+    if tags.is_empty() {
+        format!("{}none{}", DIM, RESET)
+    } else {
+        tags.join(", ")
+    }
+}
+
+fn print_success(message: &str) {
+    println!("{}ok{} {}", GREEN, RESET, message);
+}
+
+fn print_warning(message: &str) {
+    println!("{}warn{} {}", YELLOW, RESET, message);
+}
+
+fn print_error(message: &str) {
+    println!("{}error{} {}", RED, RESET, message);
+}
+
+fn print_snippet_table(title: &str, snippets: &[&Snippet]) {
+    println!(
+        "{}{}{} {}{}{} snippet(s)",
+        BOLD,
+        title,
+        RESET,
+        DIM,
+        snippets.len(),
+        RESET
+    );
+
+    if snippets.is_empty() {
+        println!("{}No snippets found.{}", DIM, RESET);
+        return;
+    }
+
+    println!(
+        "{}{:>4}  {:<10}  {:<30}  {:<28}  {}{}",
+        DIM, "ID", "TYPE", "TITLE", "TAGS", "PREVIEW", RESET
+    );
+    println!("{}", "-".repeat(96));
+
+    for snippet in snippets {
+        let preview = snippet.content.replace('\n', " ");
+        println!(
+            "{:>4}  {:<10}  {:<30}  {:<28}  {}",
+            snippet.id,
+            kind_label(&snippet.kind),
+            truncate(&snippet.title, 30),
+            truncate(&tags_label(&snippet.tags), 28),
+            truncate(&preview, 20)
+        );
+    }
+}
+
+fn print_snippet_detail(snippet: &Snippet) {
+    println!("{}#{}{}  {}", CYAN, snippet.id, RESET, snippet.title);
+    println!(
+        "{}type:{} {}  {}tags:{} {}",
+        DIM,
+        RESET,
+        kind_label(&snippet.kind),
+        DIM,
+        RESET,
+        tags_label(&snippet.tags)
+    );
+    println!("{}created:{} {}", DIM, RESET, snippet.created_at);
+    println!();
+    println!("{}content{}", BOLD, RESET);
+    println!("{}", "-".repeat(72));
+    println!("{}", snippet.content);
 }
