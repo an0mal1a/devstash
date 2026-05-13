@@ -13,6 +13,7 @@ COMMANDS:
     delete <id>           Delete a snippet by ID
     search <query>        Search snippets by title or content
     tag <tag1 tag2 ...>   Search snippets by tags
+    export <path>         Export the json snippets file to a specified path
     help                  Show this help panel
 
 SNIPPET TYPES:
@@ -29,6 +30,7 @@ EXAMPLES:
     devstash delete 1
     devstash search cooking recipe
     devstash tag vscode 3d
+    devstash export C:\Users\username\backups\exported_snippets.json
 
 TAGS:
     When adding a snippet, write tags separated by commas:

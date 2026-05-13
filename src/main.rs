@@ -156,26 +156,27 @@ fn delete_snippet(args: &Vec<String>, snippets: &mut Vec<Snippet>)  {
     }
 }
 
-fn search_snippets(args: &Vec<String>, snippets: &[Snippet]) {
-    let slice = match args.get(2..){
-        Some(slice) if !slice.is_empty() => slice,
-        _ => return
-    };
+fn search_snippets(args: &Vec<String>, snippets: &[Snippet]) -> Result<(), String> {
+    let slice = args
+        .get(2..)
+        .filter(|s| !s.is_empty())
+        .ok_or("No tags specified")?;
 
     let search_query = slice.join(" ").to_ascii_lowercase();
     let r: Vec<&Snippet> = snippets.iter().filter(|s| s.content.to_ascii_lowercase().contains(&search_query) || s.title.to_ascii_lowercase().contains(&search_query)).collect();
 
-    println!("{:#?}", r )
+    println!("{:#?}", r );
+    Ok(())
 }
 
 
-fn search_by_tag(args: &Vec<String>, snippets: &[Snippet]){
+fn search_by_tag(args: &Vec<String>, snippets: &[Snippet]) -> Result<(), String>{
     // Extract the search_query
-    let tags_to_find = match args.get(2..) {
-        Some(slice) if !slice.is_empty() => slice,
-        _ => return
-    };
-
+    let tags_to_find = args
+        .get(2..)
+        .filter(|t| !t.is_empty())
+        .ok_or("No tags specified")?;
+    
     let tag_set: HashSet<_> = tags_to_find.iter().collect();
 
     // Compare 2 slices
@@ -185,16 +186,14 @@ fn search_by_tag(args: &Vec<String>, snippets: &[Snippet]){
             snippet.tags.iter().any(|tag| tag_set.contains(tag))
         }).collect();
 
-    println!("{:#?}", matches)
+    println!("{:#?}", matches);
+    Ok(())
 }
 
 
-fn export(args: &Vec<String>) -> Result<bool, String>{
+fn export_snippets(args: &[String]) -> Result<(), &str>{
     // Get file path
-    let export_path = match args.get(2) {
-        Some(path) => path,
-        None => { return Err("No se ha especificado el path".to_string()); }
-    };
+    let export_path = args.get(2).ok_or("No export path specified")?;
 
     // Check if file path exists
     let export_path = Path::new(&export_path);
@@ -210,11 +209,27 @@ fn export(args: &Vec<String>) -> Result<bool, String>{
     }
 
     match copy(PATH, export_path) {
-        Ok(_) => { println!("[*>] File backed up successfully"); Ok(true)},
-        Err(e) => { println!("[!>] File hasn't been backed up: {}", e); Err("File error".to_string())},
+        Ok(_) => { println!("[*>] File backed up successfully"); Ok(())},
+        Err(e) => { println!("[!>] File hasn't been backed up: {}", e); Err("File error")},
     }
 }
 
+
+fn import_snippets(args: &[String]) -> Result<(), String>{
+    let import_path = args.get(2).ok_or("No import specified")?;
+
+    if !Path::new(import_path).exists() {
+        return Err("Import file does not exist".to_string())
+    }
+
+    match copy(import_path, PATH) {
+        Ok(_) => { 
+            println!("[*>] File imported successfully"); 
+            Ok(())
+        },
+        Err(e) => Err(format!("Failed to import file: {}", e))
+    }
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -230,12 +245,10 @@ fn main() {
     else if action == "list" { list_snippets(&args, &snippets) }
     else if action == "show" { show_snippet(&args, &snippets); }
     else if action == "delete" { delete_snippet(&args, &mut snippets); }
-    else if action == "search" { search_snippets(&args, &snippets)  }
+    else if action == "search" { search_snippets(&args, &snippets);  }
     else if action == "tag" { search_by_tag(&args, &snippets); }
-    else if action == "export" { export(&args); }
-    else if action == "import" { unimplemented!(); }
-
-
+    else if action == "export" { export_snippets(&args); }
+    else if action == "import" { return import_snippets(&args).unwrap(); }  // Return early because import already replaces the JSON file directly. Continuing execution would overwrite the imported file with the old in-memory snippets.
 
     let saved = match json_core::save(PATH, &snippets) {
         Ok(sn) => sn,
