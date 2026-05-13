@@ -4,6 +4,7 @@ pub mod json_core;
 pub mod utils;
 
 use core::error;
+use std::collections::HashSet;
 use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use std::io::{self, Write}; 
@@ -161,11 +162,30 @@ fn search_snippets(args: &Vec<String>, snippets: &[Snippet]) {
         _ => return
     };
 
-
     let search_query = slice.join(" ").to_ascii_lowercase();
     let r: Vec<&Snippet> = snippets.iter().filter(|s| s.content.to_ascii_lowercase().contains(&search_query) || s.title.to_ascii_lowercase().contains(&search_query)).collect();
 
     println!("{:#?}", r )
+}
+
+
+fn search_by_tag(args: &Vec<String>, snippets: &[Snippet]){
+    // Extract the search_query
+    let tags_to_find = match args.get(2..) {
+        Some(slice) if !slice.is_empty() => slice,
+        _ => return
+    };
+
+    let tag_set: HashSet<_> = tags_to_find.iter().collect();
+
+    // Compare 2 slices
+    let matches: Vec<&Snippet> = snippets
+        .iter()
+        .filter(|snippet| {
+            snippet.tags.iter().any(|tag| tag_set.contains(tag))
+        }).collect();
+
+    println!("{:#?}", matches)
 }
 
 
@@ -184,7 +204,7 @@ fn main() {
     else if action == "show" { show_snippet(&args, &snippets); }
     else if action == "delete" { delete_snippet(&args, &mut snippets); }
     else if action == "search" { search_snippets(&args, &snippets)  }
-    else if action == "tag" { unimplemented!(); }
+    else if action == "tag" { search_by_tag(&args, &snippets); }
     else if action == "export" { unimplemented!(); }
     else if action == "import" { unimplemented!(); }
 
