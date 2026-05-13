@@ -59,7 +59,7 @@ pub fn delete_snippet_by_id(id: u64, snippets: &mut Vec<Snippet>) -> Result<(), 
 
 // Printing utils
 
-fn kind_label(kind: &SnippetKind) -> &'static str {
+pub fn kind_label(kind: &SnippetKind) -> &'static str {
     match kind {
         SnippetKind::Command => "command",
         SnippetKind::Json => "json",
@@ -67,7 +67,7 @@ fn kind_label(kind: &SnippetKind) -> &'static str {
     }
 }
 
-fn truncate(value: &str, max_len: usize) -> String {
+pub fn truncate(value: &str, max_len: usize) -> String {
     let chars: Vec<char> = value.chars().collect();
     if chars.len() <= max_len {
         return value.to_string();
@@ -78,7 +78,7 @@ fn truncate(value: &str, max_len: usize) -> String {
     shortened
 }
 
-fn tags_label(tags: &[String]) -> String {
+pub fn tags_label(tags: &[String]) -> String {
     if tags.is_empty() {
         format!("{}none{}", DIM, RESET)
     } else {
@@ -86,19 +86,19 @@ fn tags_label(tags: &[String]) -> String {
     }
 }
 
-fn print_success(message: &str) {
+pub fn print_success(message: &str) {
     println!("{}ok{} {}", GREEN, RESET, message);
 }
 
-fn print_warning(message: &str) {
+pub fn print_warning(message: &str) {
     println!("{}warn{} {}", YELLOW, RESET, message);
 }
 
-fn print_error(message: &str) {
+pub fn print_error(message: &str) {
     println!("{}error{} {}", RED, RESET, message);
 }
 
-fn print_snippet_table(title: &str, snippets: &[&Snippet]) {
+pub fn print_snippet_table(title: &str, snippets: &[&Snippet]) {
     println!(
         "{}{}{} {}{}{} snippet(s)",
         BOLD,
@@ -133,7 +133,7 @@ fn print_snippet_table(title: &str, snippets: &[&Snippet]) {
     }
 }
 
-fn print_snippet_detail(snippet: &Snippet) {
+pub fn print_snippet_detail(snippet: &Snippet) {
     println!("{}#{}{}  {}", CYAN, snippet.id, RESET, snippet.title);
     println!(
         "{}type:{} {}  {}tags:{} {}",

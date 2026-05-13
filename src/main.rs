@@ -123,7 +123,7 @@ fn add_snippet(args: &Vec<String>, snippets: &mut Vec<Snippet>) {
                 .unwrap()
                 .as_secs() as i64,
         });
-        print_success(&format!("Snippet #{} saved", last_id + 1));
+        utils::print_success(&format!("Snippet #{} saved", last_id + 1));
     }
 }
 
@@ -136,7 +136,7 @@ fn list_snippets(args: &[String], snippets: &[Snippet]) {
     let limit = limit.min(snippets.len());
     let slice = &snippets[0..limit];
     let rows: Vec<&Snippet> = slice.iter().collect();
-    print_snippet_table("DevStash", &rows);
+    utils::print_snippet_table("DevStash", &rows);
 }
 
 fn show_snippet(args: &Vec<String>, snippets: &[Snippet]) {
@@ -146,8 +146,8 @@ fn show_snippet(args: &Vec<String>, snippets: &[Snippet]) {
     };
 
     match utils::get_snippet_by_id(id, snippets) {
-        Ok(snippet) => print_snippet_detail(snippet),
-        Err(e) => print_error(&e),
+        Ok(snippet) => utils::print_snippet_detail(snippet),
+        Err(e) => utils::print_error(&e),
     }
 }
 
@@ -160,8 +160,8 @@ fn delete_snippet(args: &Vec<String>, snippets: &mut Vec<Snippet>) {
     };
 
     match utils::delete_snippet_by_id(id, snippets) {
-        Ok(_) => print_success(&format!("Snippet #{} removed", id)),
-        Err(e) => print_error(&e),
+        Ok(_) => utils::print_success(&format!("Snippet #{} removed", id)),
+        Err(e) => utils::print_error(&e),
     }
 }
 
@@ -180,7 +180,7 @@ fn search_snippets(args: &Vec<String>, snippets: &[Snippet]) -> Result<(), Strin
         })
         .collect();
 
-    print_snippet_table(&format!("Search: {}", search_query), &r);
+    utils::print_snippet_table(&format!("Search: {}", search_query), &r);
     Ok(())
 }
 
@@ -199,7 +199,7 @@ fn search_by_tag(args: &Vec<String>, snippets: &[Snippet]) -> Result<(), String>
         .filter(|snippet| snippet.tags.iter().any(|tag| tag_set.contains(tag)))
         .collect();
 
-    print_snippet_table(&format!("Tags: {}", tags_to_find.join(", ")), &matches);
+    utils::print_snippet_table(&format!("Tags: {}", tags_to_find.join(", ")), &matches);
     Ok(())
 }
 
@@ -211,22 +211,22 @@ fn export_snippets(args: &[String]) -> Result<(), &str> {
     let export_path = Path::new(&export_path);
     if let Some(parent) = export_path.parent() {
         if !parent.exists() {
-            print_warning(&format!("Creating parent path: {}", parent.display()));
+            utils::print_warning(&format!("Creating parent path: {}", parent.display()));
 
             match create_dir_all(parent) {
-                Ok(_) => print_success("Parent path created"),
-                Err(e) => print_error(&format!("Parent path was not created: {}", e)),
+                Ok(_) => utils::print_success("Parent path created"),
+                Err(e) => utils::print_error(&format!("Parent path was not created: {}", e)),
             }
         }
     }
 
     match copy(PATH, export_path) {
         Ok(_) => {
-            print_success("File exported successfully");
+            utils::print_success("File exported successfully");
             Ok(())
         }
         Err(e) => {
-            print_error(&format!("File was not exported: {}", e));
+            utils::print_error(&format!("File was not exported: {}", e));
             Err("File error")
         }
     }
@@ -241,7 +241,7 @@ fn import_snippets(args: &[String]) -> Result<(), String> {
 
     match copy(import_path, PATH) {
         Ok(_) => {
-            print_success("File imported successfully");
+            utils::print_success("File imported successfully");
             Ok(())
         }
         Err(e) => Err(format!("Failed to import file: {}", e)),
@@ -258,7 +258,7 @@ fn main() {
     let mut snippets: Vec<Snippet> = match json_core::parse(PATH.to_string()) {
         Ok(sn) => sn,
         Err(e) => {
-            print_error(&format!("{}", e));
+            utils::print_error(&format!("{}", e));
             return;
         }
     };
@@ -271,16 +271,16 @@ fn main() {
     else if action == "delete" { delete_snippet(&args, &mut snippets);} 
     else if action == "search" {
         if let Err(e) = search_snippets(&args, &snippets) {
-            print_error(&e);
+            utils::print_error(&e);
         }
     } else if action == "tag" {
         if let Err(e) = search_by_tag(&args, &snippets) {
-            print_error(&e);
+            utils::print_error(&e);
         }
     } else if action == "export" { let _ = export_snippets(&args); } 
     else if action == "import" {
         if let Err(e) = import_snippets(&args) {
-            print_error(&e);
+            utils::print_error(&e);
         }
         return;
     } // Return early because import already replaces the JSON file directly. Continuing execution would overwrite the imported file with the old in-memory snippets.
@@ -288,7 +288,7 @@ fn main() {
     match json_core::save(PATH, &snippets) {
         Ok(sn) => sn,
         Err(e) => {
-            print_error(&format!("{}", e));
+            utils::print_error(&format!("{}", e));
             return;
         }
     };
