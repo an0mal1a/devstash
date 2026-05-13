@@ -42,12 +42,6 @@ pub fn get_snippet_by_id(id: u64, snippets: &[Snippet]) -> Result<&Snippet, Stri
 }
 
 pub fn delete_snippet_by_id(id: u64, snippets: &mut Vec<Snippet>) -> Result<(), String> {
-    // // Check if id is on json snippets
-    // match get_snippet_by_id(id, &snippets) {
-    //     Ok(_) => println!("Snippet with id {} has found!", id),
-    //     Err(e) => return Err(e)
-    // }
-
     // Check if id is on json snippets and get the index
     let index = snippets
         .iter()

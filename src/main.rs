@@ -3,12 +3,12 @@ pub mod help_panel;
 pub mod json_core;
 pub mod utils;
 
-use core::error;
 use std::collections::HashSet;
+use std::fs::{copy, create_dir_all};
 use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use std::io::{self, Write}; 
-use std::{env};
+use std::{env, fs, path::Path};
 
 
 const PATH: &str = "snippets.json";
@@ -189,6 +189,33 @@ fn search_by_tag(args: &Vec<String>, snippets: &[Snippet]){
 }
 
 
+fn export(args: &Vec<String>) -> Result<bool, String>{
+    // Get file path
+    let export_path = match args.get(2) {
+        Some(path) => path,
+        None => { return Err("No se ha especificado el path".to_string()); }
+    };
+
+    // Check if file path exists
+    let export_path = Path::new(&export_path);
+    if let Some(parent) = export_path.parent() {
+        if !parent.exists(){
+            println!("[*>] Creating parent path: {}", parent.display());
+
+            match create_dir_all(parent) {
+                Ok(_) => println!("\t[*>] Parent path has been created"),
+                Err(e) => println!("\t[!>] Parent path hasn't been created: {}", e),
+            }
+        }   
+    }
+
+    match copy(PATH, export_path) {
+        Ok(_) => { println!("[*>] File backed up successfully"); Ok(true)},
+        Err(e) => { println!("[!>] File hasn't been backed up: {}", e); Err("File error".to_string())},
+    }
+}
+
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 { help_panel::main(); return }
@@ -205,7 +232,7 @@ fn main() {
     else if action == "delete" { delete_snippet(&args, &mut snippets); }
     else if action == "search" { search_snippets(&args, &snippets)  }
     else if action == "tag" { search_by_tag(&args, &snippets); }
-    else if action == "export" { unimplemented!(); }
+    else if action == "export" { export(&args); }
     else if action == "import" { unimplemented!(); }
 
 
