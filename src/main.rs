@@ -155,6 +155,19 @@ fn delete_snippet(args: &Vec<String>, snippets: &mut Vec<Snippet>)  {
     }
 }
 
+fn search_snippets(args: &Vec<String>, snippets: &[Snippet]) {
+    let slice = match args.get(2..){
+        Some(slice) if !slice.is_empty() => slice,
+        _ => return
+    };
+
+
+    let search_query = slice.join(" ").to_ascii_lowercase();
+    let r: Vec<&Snippet> = snippets.iter().filter(|s| s.content.to_ascii_lowercase().contains(&search_query) || s.title.to_ascii_lowercase().contains(&search_query)).collect();
+
+    println!("{:#?}", r )
+}
+
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -170,6 +183,12 @@ fn main() {
     else if action == "list" { list_snippets(&args, &snippets) }
     else if action == "show" { show_snippet(&args, &snippets); }
     else if action == "delete" { delete_snippet(&args, &mut snippets); }
+    else if action == "search" { search_snippets(&args, &snippets)  }
+    else if action == "tag" { unimplemented!(); }
+    else if action == "export" { unimplemented!(); }
+    else if action == "import" { unimplemented!(); }
+
+
 
     let saved = match json_core::save(PATH, &snippets) {
         Ok(sn) => sn,
