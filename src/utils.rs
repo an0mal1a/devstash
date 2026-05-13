@@ -1,3 +1,7 @@
+use std::fs;
+
+use serde_json::Value;
+
 use crate::Buffer;
 use crate::Snippet;
 use crate::SnippetKind;
@@ -11,6 +15,7 @@ use crate::YELLOW;
 use crate::RED;
 use crate::CYAN;
 
+// General
 pub fn are_all_answered(arr: &Vec<SnippetQuestion>) -> bool {
     for q in arr {
         if !q.answered {
@@ -56,9 +61,7 @@ pub fn delete_snippet_by_id(id: u64, snippets: &mut Vec<Snippet>) -> Result<(), 
     Ok(())
 }
 
-
 // Printing utils
-
 pub fn kind_label(kind: &SnippetKind) -> &'static str {
     match kind {
         SnippetKind::Command => "command",

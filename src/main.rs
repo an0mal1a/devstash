@@ -239,6 +239,9 @@ fn import_snippets(args: &[String]) -> Result<(), String> {
         return Err("Import file does not exist".to_string());
     }
 
+    // Check if the file is compatible.
+    json_core::compatibilty_check(import_path.to_string())?;
+
     match copy(import_path, PATH) {
         Ok(_) => {
             utils::print_success("File imported successfully");
