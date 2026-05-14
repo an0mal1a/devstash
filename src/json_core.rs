@@ -1,6 +1,5 @@
 use std::path::Path;
 use std::fs;
-use std::thread::current;
 
 use crate::Snippet;
 use crate::utils::get_last_id;

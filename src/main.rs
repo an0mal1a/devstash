@@ -3,11 +3,12 @@ pub mod help_panel;
 pub mod json_core;
 pub mod utils;
 
-use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::fs::{self, copy, create_dir_all};
-use std::io::{self, Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
+use serde::{Deserialize, Serialize};
+use std::io::{self, Write};
+
+use std::collections::HashSet;
 use std::{env, path::Path};
 
 const PATH: &str = "snippets.json";
@@ -49,6 +50,16 @@ pub enum SnippetKind {
     Command,
     Json,
     Note,
+}
+
+impl std::fmt::Display for SnippetKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            SnippetKind::Command => write!(f, "Command"),
+            SnippetKind::Json => write!(f, "Json"),
+            SnippetKind::Note => write!(f, "Note")
+        }
+    }
 }
 
 fn add_snippet(args: &Vec<String>, snippets: &mut Vec<Snippet>) {
@@ -125,6 +136,44 @@ fn add_snippet(args: &Vec<String>, snippets: &mut Vec<Snippet>) {
         });
         utils::print_success(&format!("Snippet #{} saved", last_id + 1));
     }
+}
+
+fn edit_snippet(args: &[String], snippets: &mut Vec<Snippet>) -> Result<(), String>  {
+    let id_to_edit = args.get(2).ok_or("No ID specified")?;
+    let id: u64 = match id_to_edit.parse() {
+        Ok(id) => id,
+        Err(e) => {
+            utils::print_error(&e.to_string());
+            return Err(e.to_string())
+        }
+    }; 
+    
+    let s = snippets.iter_mut().find(|s| s.id == id).unwrap();
+
+    if let Some(title) = utils::ask_optional("Title", &s.title)? {
+        s.title = title
+    }
+    
+    if let Some(content) = utils::ask_optional("Content", &s.content)? {
+        s.content = content
+    }
+
+    if let Some(tags) = utils::ask_optional("Tags", &s.tags.join(","))? {
+        s.tags = tags.split(',')
+            .map(|tag| tag.trim().to_string())
+            .filter(|tag| !tag.is_empty())
+            .collect() 
+    }
+
+    if let Some(kind) = utils::ask_optional("Kind", &s.kind.to_string())? {
+        s.kind = match kind.as_str() {
+            "command" => SnippetKind::Command,
+            "json" => SnippetKind::Json,
+            _ => SnippetKind::Note
+        };
+    }
+
+    Ok(())
 }
 
 fn list_snippets(args: &[String], snippets: &[Snippet]) {
@@ -284,7 +333,7 @@ fn main() {
     let action: &String = &args[1];
     match action.as_str() {
         "add" => { add_snippet(&args, &mut snippets); } 
-        "edit" => { unimplemented!(); should_save = true; } 
+        "edit" => { let _ = edit_snippet(&args, &mut snippets); should_save = true; } 
         "help" => { return help_panel::main(); } 
         "list" => { list_snippets(&args, &snippets); } 
         "show" => { show_snippet(&args, &snippets); } 

@@ -1,6 +1,5 @@
-use std::fs;
 
-use serde_json::Value;
+use std::io::{self, Write};
 
 use crate::Buffer;
 use crate::Snippet;
@@ -59,6 +58,24 @@ pub fn delete_snippet_by_id(id: u64, snippets: &mut Vec<Snippet>) -> Result<(), 
 
     snippets.remove(index);
     Ok(())
+}
+
+pub fn ask_optional(label: &str, current: &str) -> Result<Option<String>, String> {
+    print!("{}{}{} [{}] > ", BOLD, label, RESET, current);
+    io::stdout().flush().map_err(|e| e.to_string())?;
+
+    let mut answer = String::new();
+    io::stdin()
+        .read_line(&mut answer)
+        .map_err(|e| e.to_string())?;
+
+    let answer = answer.trim();
+
+    if answer.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(answer.to_string()))
+    }
 }
 
 // Printing utils
