@@ -8,8 +8,8 @@ use crate::constants::SnippetQuestion;
 use crate::constants::RESET; 
 use crate::constants::BOLD;
 
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::io::{self, Write};
+use chrono::Local;
 
 pub fn add_snippet( args: &Vec<String>, snippets: &mut Vec<Snippet>) {
     let to_add = match args.get(2) {
@@ -78,10 +78,7 @@ pub fn add_snippet( args: &Vec<String>, snippets: &mut Vec<Snippet>) {
                 .filter(|tag| !tag.is_empty())
                 .collect(),
             kind: utils::extract_kind(&questions[3].buf),
-            created_at: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs() as i64,
+            created_at: Local::now().format("%d-%m-%Y %H:%M").to_string(),
         });
         utils::print_success(&format!("Snippet #{} saved", last_id + 1));
     }

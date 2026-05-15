@@ -42,7 +42,7 @@ fn main() {
 
     let action: &String = &args[1];
     match action.as_str() {
-        "add" => { add::add_snippet(&args, &mut snippets); } 
+        "add" => { add::add_snippet(&args, &mut snippets); should_save = true; } 
         "edit" => { 
             if let Err(e) = edit::edit_snippet(&args, &mut snippets) { 
                 utils::print_error(&e);
