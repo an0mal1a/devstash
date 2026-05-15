@@ -365,7 +365,7 @@ fn main() {
         "list" => { list_snippets(&args, &snippets); } 
         "show" => { show_snippet(&args, &snippets); } 
         "delete" => { delete_snippet(&args, &mut snippets); should_save = true; } 
-        "copy" => { copy_snippet(&args, &snippets);  } 
+        "copy" => { let _ = copy_snippet(&args, &snippets);  } 
         "export" => { let _ = export_snippets(&args); }
         "search" => { 
             if let Err(e) = search_snippets(&args, &snippets) {
