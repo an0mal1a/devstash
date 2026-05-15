@@ -18,6 +18,7 @@ COMMANDS:
     export <path>          Export the json snippets file
     import <path>          Import the json snippets file 
     restore <path>         Restore the specified snippets file 
+    --version              Show `devstash` version
     help                   Show this help panel
 
 SNIPPET TYPES:

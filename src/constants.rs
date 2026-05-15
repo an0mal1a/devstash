@@ -1,5 +1,3 @@
-
-
 use serde::{Deserialize, Serialize};
 
 pub const PATH: &str = "snippets.json";
@@ -10,6 +8,7 @@ pub const GREEN: &str = "\x1b[32m";
 pub const YELLOW: &str = "\x1b[33m";
 pub const RED: &str = "\x1b[31m";
 pub const CYAN: &str = "\x1b[36m";
+pub const VERSION: &str = "v0.1";
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Snippet {

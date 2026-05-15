@@ -19,7 +19,11 @@ use commands::restore;
 use std::env;
 
 use constants::{
+    BOLD, 
+    RESET,
+    YELLOW,
     PATH,
+    VERSION,
     Snippet,    
 };
 
@@ -73,6 +77,9 @@ fn main() {
             } else {
                 should_save = true;
             }
+        }
+        "--version" => {
+            println!("{}devstash{}: version {}{}", BOLD, RESET, YELLOW, VERSION)
         }
         _ => {
             utils::print_error("Unknown command");
