@@ -14,6 +14,7 @@ COMMANDS:
     delete <id>            Delete a snippet by ID
     search <query>         Search snippets by title or content
     tag <tag1 tag2 ...>    Search snippets by tags
+    copy <id>              Copy the content of the snippet to clipboard
     export <path>          Export the json snippets file
     import <path>          Import the json snippets file 
     restore <path>         Restore the specified snippets file 
@@ -33,6 +34,7 @@ EXAMPLES:
     devstash delete 1
     devstash search cooking recipe
     devstash tag vscode 3d
+    devstash copy 1
     devstash export C:\Users\username\backups\exported_snippets.json
     devstash import C:\Users\username\backups\exported_snippets_02.json
     devstash restore C:\Users\username\backups\exported_snippets_02.json
