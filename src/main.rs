@@ -5,11 +5,12 @@ pub mod utils;
 
 use std::fs::{self, copy, create_dir_all};
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
-use std::io::{self, Write};
-
 use std::collections::HashSet;
+use std::io::{self, Write};
 use std::{env, path::Path};
+
+use serde::{Deserialize, Serialize};
+use arboard::Clipboard;
 
 const PATH: &str = "snippets.json";
 pub const RESET: &str = "\x1b[0m";
@@ -252,6 +253,32 @@ fn search_by_tag(args: &Vec<String>, snippets: &[Snippet]) -> Result<(), String>
     Ok(())
 }
 
+fn copy_snippet(args: &[String], snippets: &[Snippet]) -> Result<(), String> {
+    let id = args.get(2).ok_or("No ID specified")?;
+    let id: u64 = match id.parse() {
+        Ok(id) => id,
+        Err(e) => {
+            utils::print_error(&e.to_string());
+            return Err(e.to_string())
+        }
+    }; 
+
+    let s: Snippet = utils::get_snippet_by_id(id, snippets)?.clone();
+    let mut c = Clipboard::new().unwrap();
+    
+    match c.set_text(s.content) {
+        Ok(v) => {
+            println!("Snippet {}{}{} copied to {}clipboard{}", YELLOW, id, RESET, BOLD, RESET);
+            Ok(())
+        },
+        Err(e) => {
+            utils::print_error(&e.to_string());
+            Err(e.to_string())
+        }
+    }
+    
+}
+
 fn export_snippets(args: &[String]) -> Result<(), &str> {
     // Get file path
     let export_path = args.get(2).ok_or("No export path specified")?;
@@ -338,7 +365,7 @@ fn main() {
         "list" => { list_snippets(&args, &snippets); } 
         "show" => { show_snippet(&args, &snippets); } 
         "delete" => { delete_snippet(&args, &mut snippets); should_save = true; } 
-        "copy" => { unimplemented!();  } 
+        "copy" => { copy_snippet(&args, &snippets);  } 
         "export" => { let _ = export_snippets(&args); }
         "search" => { 
             if let Err(e) = search_snippets(&args, &snippets) {
