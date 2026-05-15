@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::fs;
 
-use crate::Snippet;
+use crate::constants::Snippet;
 use crate::utils::get_last_id;
 
 // Compatibility of files

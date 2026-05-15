@@ -1,18 +1,20 @@
 
 use std::io::{self, Write};
 
-use crate::Buffer;
-use crate::Snippet;
-use crate::SnippetKind;
-use crate::SnippetQuestion;
+use crate::constants::{
+    DIM,
+    RED,
+    BOLD,
+    CYAN,
+    GREEN,
+    RESET,
+    YELLOW,
 
-use crate::RESET;
-use crate::DIM;
-use crate::BOLD;
-use crate::GREEN;
-use crate::YELLOW;
-use crate::RED;
-use crate::CYAN;
+    Buffer,
+    Snippet,
+    SnippetKind,
+    SnippetQuestion,
+};
 
 // General
 pub fn are_all_answered(arr: &Vec<SnippetQuestion>) -> bool {
